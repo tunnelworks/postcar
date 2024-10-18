@@ -1,7 +1,7 @@
 import typing as t
-from postcar.utils import fs
 from postcar._types import Module
 from postcar.db import queries
+from postcar.utils import fs
 
 
 if t.TYPE_CHECKING:

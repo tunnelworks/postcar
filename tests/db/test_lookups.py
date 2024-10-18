@@ -1,7 +1,7 @@
 import typing as t
 import pytest
-from postcar.db import lookups
 from postcar._types import Module
+from postcar.db import lookups
 
 
 if t.TYPE_CHECKING:
