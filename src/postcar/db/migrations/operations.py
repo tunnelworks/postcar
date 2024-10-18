@@ -49,7 +49,13 @@ async def migrate(
 
     await migration.run(rollback=revert)
 
-    await connection.execute(query=query, params=dict(name=module.name))
+    await connection.execute(
+        query=query,
+        params=dict(
+            package=module.package,
+            name=module.name,
+        ),
+    )
 
 
 async def run(

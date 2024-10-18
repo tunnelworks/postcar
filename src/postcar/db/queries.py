@@ -23,26 +23,28 @@ BOOKKEEPING_INIT: t.Final[str] = """--sql
 
   create table {namespace}."_migration" (
     "pk" integer generated always as identity primary key,
+    "package" text not null,
     "name" text not null,
     "created_at" timestamptz not null default CURRENT_TIMESTAMP,
     "reverted_at" timestamptz
   );
 
   create unique index "_distinct_migration_name"
-    on {namespace}."_migration" ("name")
+    on {namespace}."_migration" ("package", "name")
       where "reverted_at" is null;
 """
 
 # TODO: add package to queries
 BOOKKEEPING_UPDATE: t.Final[RevertibleQuery] = RevertibleQuery(
     forward="""--sql
-      insert into {namespace}."_migration" ("name")
-        values (%(name)s);
+      insert into {namespace}."_migration" ("package", "name")
+        values (%(package)s, %(name)s);
     """,
     rollback="""--sql
       update {namespace}."_migration"
         set "reverted_at" = current_timestamp
-        where "name" = %(name)s
+        where "package" = %(package)s
+          and "name" = %(name)s
           and "reverted_at" is null;
     """,
 )
@@ -61,7 +63,8 @@ MISSING_MIGRATIONS: t.Final[str] = """--sql
     "_f"."name"
   from "_f"
   left join {namespace}."_migration" as "_m"
-    on "_f"."name" = "_m"."name"
+    on "_m"."package" = %(package)s
+      and "_m"."name" = "_f"."name"
       and "_m"."reverted_at" is null
   where "_m"."name" is null;
 """
