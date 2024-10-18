@@ -3,6 +3,7 @@ import pathlib
 import re
 import typing as t
 from postcar._types import Module
+from postcar.utils.names import MIGRATION_PATTERN
 
 
 def find_migrations(package: str) -> t.Sequence[Module]:
@@ -22,7 +23,7 @@ def find_migrations(package: str) -> t.Sequence[Module]:
         return path.stem
 
     def predicate(stem: str) -> t.TypeGuard[str]:
-        return re.match(r"^[0-9]{4}_\w+$", stem) is not None
+        return MIGRATION_PATTERN.match(stem) is not None
 
     names = filter(predicate, map(to_stem, filter(is_file, root.iterdir())))
 
