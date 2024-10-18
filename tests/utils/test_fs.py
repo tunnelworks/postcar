@@ -7,3 +7,11 @@ def test_find_migrations(package: str, migration_name: str) -> None:
 
     assert Module(name=migration_name, package=package) in result
     assert Module(name="__init__", package=package) not in result
+
+
+def test_load_migration(package: str, migration_name: str) -> None:
+    module = Module(name=migration_name, package=package)
+    migration = fs.load_migration(module=module)
+
+    assert hasattr(migration, "forward")
+    assert hasattr(migration, "revert")
