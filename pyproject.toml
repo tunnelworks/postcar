@@ -42,6 +42,27 @@ extra-dependencies = ["mypy>=1.0.0", "pytest"]
 check = "mypy --install-types --non-interactive {args:src/postcar tests}"
 
 
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_unused_configs = true
+warn_unused_ignores = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_return_any = true
+warn_no_return = true
+warn_unreachable = true
+warn_incomplete_stub = true
+no_implicit_optional = true
+no_implicit_reexport = true
+disallow_any_decorated = true
+disallow_any_explicit = true
+disallow_any_generics = true
+disallow_any_unimported = true
+disallow_subclassing_any = true
+disallow_untyped_defs = true
+
+
 [tool.hatch.envs.hatch-test]
 extra-args = ["-vv"]
 randomize = true
