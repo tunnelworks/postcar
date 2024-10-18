@@ -1,7 +1,7 @@
 import typing as t
 import pytest
 from postcar.config import Config
-from postcar import db
+from postcar.db import migrations
 
 
 if t.TYPE_CHECKING:
@@ -32,7 +32,7 @@ async def connection(config: Config) -> t.AsyncGenerator["Connection", None]:
     from psycopg import AsyncConnection
 
     async with await AsyncConnection.connect(conninfo=config.conninfo) as connection:
-        await db._ensure_base(connection=connection, namespace=config.namespace)
+        await migrations._ensure_base(connection=connection, namespace=config.namespace)
 
         yield connection
 
