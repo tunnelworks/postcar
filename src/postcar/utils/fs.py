@@ -1,12 +1,10 @@
 import importlib
 import pathlib
 import typing as t
-from postcar._types import Migration, Module
+from postcar._types import Module
+from postcar.db.migrations.classes import Migration
+from postcar.errors import MigrationError
 from postcar.utils.names import MIGRATION_PATTERN
-
-
-if t.TYPE_CHECKING:
-    from postcar._types import Migration
 
 
 def find_migrations(package: str) -> t.Sequence[Module]:
@@ -36,10 +34,18 @@ def find_migrations(package: str) -> t.Sequence[Module]:
     return sorted(map(to_module, names))
 
 
-def load_migration(module: Module) -> "Migration":
+def load_migration(module: Module) -> t.Type[Migration]:
     _module = importlib.import_module(name=f".{module.name}", package=module.package)
 
-    if isinstance(_module, Migration):
-        return _module
+    try:
+        cls = getattr(_module, "Migration")
+    except AttributeError:
+        raise MigrationError(f"{module}: no migration class found")
 
-    raise AttributeError(f"{module}: invalid migration module, see the docs")
+    if not isinstance(cls, type):
+        raise MigrationError(f"{module}: migration is not a class")
+
+    if not issubclass(cls, Migration):
+        raise MigrationError(f"{module}: migration must inherit from `Migration`")
+
+    return cls

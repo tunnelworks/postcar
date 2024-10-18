@@ -1,11 +1,12 @@
 import typing as t
-from postcar._types import Module
 from postcar.db import lookups, queries
-from postcar.utils import fs
 
 
 if t.TYPE_CHECKING:
-    from postcar._types import Connection, StrOrHandler
+    from postcar._types import Connection, Module
+
+
+# MARK: routines
 
 
 async def lock(connection: "Connection", namespace: str) -> None:
@@ -26,21 +27,16 @@ async def _ensure_base(connection: "Connection", namespace: str) -> None:
     await connection.execute(query)
 
 
-async def _run_operation(connection: "Connection", operation: "StrOrHandler") -> None:
-    if not isinstance(operation, str):
-        return await operation(connection=connection)
-
-    await connection.execute(query=operation)
-
-
 async def migrate(
     connection: "Connection",
     namespace: str,
-    module: Module,
+    module: "Module",
     revert: bool = False,
 ) -> None:
-    migration = fs.load_migration(module=module)
-    operation = migration.revert if revert else migration.forward
+    from postcar.utils import fs
+
+    cls = fs.load_migration(module=module)
+    migration = cls(module=module, connection=connection)
 
     _query = queries.BOOKKEEPING_UPDATE
     query = queries.preformat(
@@ -51,11 +47,9 @@ async def migrate(
     # TODO logging: use logger
     print(f"INFO: running migration '{module}'")
 
-    await _run_operation(connection=connection, operation=operation)
-    await connection.execute(
-        query=query,
-        params=dict(name=module.name),
-    )
+    await migration.run(rollback=revert)
+
+    await connection.execute(query=query, params=dict(name=module.name))
 
 
 async def run(
