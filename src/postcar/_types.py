@@ -7,6 +7,12 @@ if t.TYPE_CHECKING:
 
     Connection = psycopg.AsyncConnection[TupleRow]
 
+    StrOrHandler = t.Union[str, "Handler"]
+
+    class _Migration(t.NamedTuple):
+        forward: StrOrHandler
+        revert: StrOrHandler
+
 
 class Module(t.NamedTuple):
     name: str
@@ -16,3 +22,7 @@ class Module(t.NamedTuple):
         if self.package is None:
             return self.name
         return f"{self.package}:{self.name}"
+
+
+class Handler(t.Protocol):
+    async def __call__(self, connection: "Connection") -> None: ...

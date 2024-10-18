@@ -1,9 +1,12 @@
 import importlib
 import pathlib
-import re
 import typing as t
 from postcar._types import Module
 from postcar.utils.names import MIGRATION_PATTERN
+
+
+if t.TYPE_CHECKING:
+    from postcar._types import _Migration
 
 
 def find_migrations(package: str) -> t.Sequence[Module]:
@@ -31,3 +34,12 @@ def find_migrations(package: str) -> t.Sequence[Module]:
         return Module(name=name, package=package)
 
     return sorted(map(to_module, names))
+
+
+def load_migration(module: Module) -> "_Migration":
+    _module = importlib.import_module(name=f".{module.name}", package=module.package)
+
+    if not (hasattr(_module, "forward") and hasattr(_module, "revert")):
+        raise AttributeError(f"{module}: both forward and revert must exist")
+
+    return t.cast("_Migration", _module)
