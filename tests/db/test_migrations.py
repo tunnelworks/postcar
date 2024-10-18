@@ -6,13 +6,12 @@ from postcar.db import lookups, migrations
 
 if t.TYPE_CHECKING:
     from postcar._types import Connection
-    from postcar.config import Config
 
 
 @pytest.mark.db
 async def test_migrate_one(
     connection: "Connection",
-    config: "Config",
+    namespace: str,
     package: str,
     migration_name: str,
 ) -> None:
@@ -22,27 +21,27 @@ async def test_migrate_one(
         result = await lookups.find_missing_migrations(
             connection=connection,
             package=package,
-            namespace=config.namespace,
+            namespace=namespace,
         )
 
         assert module in result
 
         await migrations.migrate(
             connection=connection,
-            namespace=config.namespace,
+            namespace=namespace,
             module=module,
         )
 
         result = await lookups.find_missing_migrations(
             connection=connection,
             package=package,
-            namespace=config.namespace,
+            namespace=namespace,
         )
         assert module not in result
 
         await migrations.migrate(
             connection=connection,
-            namespace=config.namespace,
+            namespace=namespace,
             module=module,
             revert=True,
         )
@@ -50,18 +49,20 @@ async def test_migrate_one(
         result = await lookups.find_missing_migrations(
             connection=connection,
             package=package,
-            namespace=config.namespace,
+            namespace=namespace,
         )
         assert module in result
 
 
 @pytest.mark.db
 async def test_migrate(
-    connection: "Connection", config: "Config", package: str
+    connection: "Connection",
+    namespace: str,
+    package: str,
 ) -> None:
     await migrations.run(
         connection=connection,
         package=package,
-        namespace=config.namespace,
+        namespace=namespace,
         dry_run=True,
     )

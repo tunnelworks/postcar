@@ -1,6 +1,6 @@
 import typing as t
 import pytest
-from postcar.config import Config
+from postcar import config
 
 
 if t.TYPE_CHECKING:
@@ -13,27 +13,27 @@ def namespace() -> str:
 
 
 @pytest.fixture(scope="session")
-def config(package: str, namespace: str) -> Config:
-    # TODO: fix
-    return Config(
-        package=package,
+def conninfo() -> str:
+    # TODO: fix, read from env or something
+    return config.ConnectionInfo(
         host="127.0.0.1",
-        port=5432,
-        password="1234",
-        username="postgres",
         dbname="test",
-        namespace=namespace,
-    )
+        username="postgres",
+        password="1234",
+    ).conninfo
 
 
 @pytest.fixture(scope="session")
-async def connection(config: Config) -> t.AsyncGenerator["Connection", None]:
+async def connection(
+    conninfo: str,
+    namespace: str,
+) -> t.AsyncGenerator["Connection", None]:
     from postcar.db.connections import connect
     from postcar.db.migrations.operations import _ensure_base
 
-    async with connect(conninfo=config.conninfo) as connection:
-        await _ensure_base(connection=connection, namespace=config.namespace)
+    async with connect(conninfo=conninfo) as connection:
+        await _ensure_base(connection=connection, namespace=namespace)
 
         yield connection
 
-        await connection.execute(f"drop schema {config.namespace} cascade")
+        await connection.execute(f"drop schema {namespace} cascade")
