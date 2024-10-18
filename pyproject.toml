@@ -24,7 +24,7 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
-dependencies = []
+dependencies = ["psycopg>=3"]
 
 [project.urls]
 Documentation = "https://github.com/tunnelworks/postcar#readme"
