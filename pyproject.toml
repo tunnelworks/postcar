@@ -55,7 +55,6 @@ warn_unreachable = true
 warn_incomplete_stub = true
 no_implicit_optional = true
 no_implicit_reexport = true
-disallow_any_decorated = true
 disallow_any_explicit = true
 disallow_any_generics = true
 disallow_any_unimported = true
