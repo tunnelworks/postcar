@@ -1,27 +1,11 @@
 import typing as t
-from psycopg import sql
 from postcar.utils import fs
 from postcar._types import Module
+from postcar.db import queries
 
 
 if t.TYPE_CHECKING:
     from postcar._types import Connection, StrOrHandler
-    from postcar.config import Config
-
-
-def _get_bookkeeping_update(revert: bool) -> sql.SQL:
-    if revert:
-        return sql.SQL("""--sql
-          update {namespace}."_migration"
-            set "reverted_at" = current_timestamp
-            where "name" = %(name)s
-              and "reverted_at" is null;
-        """)
-
-    return sql.SQL("""--sql
-      insert into {namespace}."_migration" ("name")
-        values (%(name)s);
-    """)
 
 
 async def _find_missing_migrations(
@@ -31,17 +15,7 @@ async def _find_missing_migrations(
 ) -> t.Sequence[Module]:
     from psycopg.rows import class_row
 
-    query = sql.SQL("""--sql
-      with "_f" as (select unnest(%(files)s::text[]) as "name")
-      select
-        %(package)s as "package",
-        "_f"."name"
-      from "_f"
-      left join {namespace}."_migration" as "_m"
-        on "_f"."name" = "_m"."name"
-          and "_m"."reverted_at" is null
-      where "_m"."name" is null;
-    """).format(namespace=sql.Identifier(namespace))
+    query = queries.preformat(query=queries.MISSING_MIGRATIONS, namespace=namespace)
 
     modules = fs.find_migrations(package=package)
 
@@ -55,9 +29,7 @@ async def _find_missing_migrations(
 async def _namespace_exists(connection: "Connection", namespace: str) -> bool:
     from psycopg.rows import scalar_row
 
-    query = """--sql
-      select count(*) from "pg_namespace" where "nspname" = %(namespace)s;
-    """
+    query = queries.NAMESPACE_EXISTS
 
     params = dict(namespace=namespace)
 
@@ -71,32 +43,17 @@ async def _ensure_base(connection: "Connection", namespace: str) -> None:
         # TODO logging: use logger
         return print(f"INFO: namespace '{namespace}' already exists, skipping")
 
-    template = sql.SQL("""--sql
-    create schema {namespace};
-
-    create table {namespace}."_migration" (
-      "pk" integer generated always as identity primary key,
-      "name" text not null,
-      "created_at" timestamptz not null default CURRENT_TIMESTAMP,
-      "reverted_at" timestamptz
-    );
-
-    create unique index "_distinct_migration_name"
-      on {namespace}."_migration" ("name")
-        where "reverted_at" is null;
-    """).format(namespace=sql.Identifier(namespace))
+    query = queries.preformat(query=queries.BOOKKEEPING_INIT, namespace=namespace)
 
     # TODO logging: use logger
     print(f"INFO: creating core schema '{namespace}'")
-    await connection.execute(template)
+    await connection.execute(query)
 
 
 async def _lock(connection: "Connection", namespace: str) -> None:
-    template = sql.SQL("""--sql
-      lock table {namespace}."_migration" in access exclusive mode nowait;
-    """).format(namespace=sql.Identifier(namespace))
+    query = queries.preformat(query=queries.LOCK, namespace=namespace)
 
-    await connection.execute(template)
+    await connection.execute(query)
 
 
 async def _run_operation(connection: "Connection", operation: "StrOrHandler") -> None:
@@ -114,21 +71,27 @@ async def _one(
 ) -> None:
     migration = fs.load_migration(module=module)
     operation = migration.revert if revert else migration.forward
-    bookkeeping = _get_bookkeeping_update(revert=revert)
+
+    _query = queries.BOOKKEEPING_UPDATE
+    query = queries.preformat(
+        query=_query.rollback if revert else _query.forward,
+        namespace=namespace,
+    )
 
     # TODO logging: use logger
     print(f"INFO: running migration '{module}'")
 
     await _run_operation(connection=connection, operation=operation)
     await connection.execute(
-        query=bookkeeping.format(namespace=sql.Identifier(namespace)),
+        query=query,
         params=dict(name=module.name),
     )
 
 
 async def run(
     connection: "Connection",
-    config: "Config",
+    package: str,
+    namespace: str,
     dry_run: bool = False,
 ) -> None:
     if dry_run:
@@ -136,13 +99,13 @@ async def run(
         print("INFO: dry-run enabled")
 
     async with connection.transaction(force_rollback=dry_run):
-        await _ensure_base(connection=connection, namespace=config.namespace)
-        await _lock(connection=connection, namespace=config.namespace)
+        await _ensure_base(connection=connection, namespace=namespace)
+        await _lock(connection=connection, namespace=namespace)
 
         migrations = await _find_missing_migrations(
             connection=connection,
-            package=config.package,
-            namespace=config.namespace,
+            package=package,
+            namespace=namespace,
         )
 
         # TODO logging: use logger
@@ -152,6 +115,6 @@ async def run(
         for migration in migrations:
             await _one(
                 connection=connection,
-                namespace=config.namespace,
+                namespace=namespace,
                 module=migration,
             )
