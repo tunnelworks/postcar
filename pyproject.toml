@@ -42,6 +42,19 @@ extra-dependencies = ["mypy>=1.0.0", "pytest"]
 check = "mypy --install-types --non-interactive {args:src/postcar tests}"
 
 
+[tool.hatch.envs.hatch-test]
+extra-args = ["-vv"]
+randomize = true
+extra-dependencies = ["pytest-asyncio"]
+
+
+[tool.pytest.ini_options]
+addopts = ["--strict-markers"]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["db: marks tests as depending on db (deselect with '-m \"not db\"')"]
+
+
 [tool.coverage.run]
 source_pkgs = ["postcar", "tests"]
 branch = true
