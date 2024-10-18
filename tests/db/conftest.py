@@ -1,7 +1,6 @@
 import typing as t
 import pytest
 from postcar.config import Config
-from postcar.db import connections, migrations
 
 
 if t.TYPE_CHECKING:
@@ -29,8 +28,11 @@ def config(package: str, namespace: str) -> Config:
 
 @pytest.fixture(scope="session")
 async def connection(config: Config) -> t.AsyncGenerator["Connection", None]:
-    async with connections.connect(conninfo=config.conninfo) as connection:
-        await migrations._ensure_base(connection=connection, namespace=config.namespace)
+    from postcar.db.connections import connect
+    from postcar.db.migrations.operations import _ensure_base
+
+    async with connect(conninfo=config.conninfo) as connection:
+        await _ensure_base(connection=connection, namespace=config.namespace)
 
         yield connection
 

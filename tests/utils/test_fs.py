@@ -1,5 +1,7 @@
 import pytest
+import postcar
 from postcar._types import Module
+from postcar.errors import MigrationError
 from postcar.utils import fs
 
 
@@ -14,12 +16,12 @@ def test_load_migration(package: str, migration_name: str) -> None:
     module = Module(name=migration_name, package=package)
     migration = fs.load_migration(module=module)
 
-    assert hasattr(migration, "forward")
-    assert hasattr(migration, "revert")
+    assert isinstance(migration, type)
+    assert issubclass(migration, postcar.Migration)
 
 
 def test_load_migration_no_revert(invalid_package: str, migration_name: str) -> None:
     module = Module(name=migration_name, package=invalid_package)
 
-    with pytest.raises(AttributeError):
+    with pytest.raises(MigrationError):
         fs.load_migration(module=module)

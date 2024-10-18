@@ -1,3 +1,4 @@
-forward = """
-create extension pg_trgm;
-"""
+import postcar
+
+
+class Bad(postcar.Migration): ...
