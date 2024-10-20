@@ -91,5 +91,5 @@ MISSING_MIGRATIONS: t.Final[str] = """--sql
 # MARK: transactions
 
 LOCK: t.Final[str] = """--sql
-  lock table {namespace}."_migration" in access exclusive mode nowait;
+  lock table {namespace}."_version" in access exclusive mode nowait;
 """
