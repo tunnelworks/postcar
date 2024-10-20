@@ -29,10 +29,17 @@ async def connection(
     namespace: str,
 ) -> t.AsyncGenerator["Connection", None]:
     from postcar.db.connections import connect
-    from postcar.db.migrations.operations import _ensure_base
+    from postcar.db.migrations.operations import (
+        _ensure_base,
+        _run_internal_migrations,
+        lock,
+    )
 
     async with connect(conninfo=conninfo) as connection:
-        await _ensure_base(connection=connection, namespace=namespace)
+        async with connection.transaction():
+            await _ensure_base(connection=connection, namespace=namespace)
+            await lock(connection=connection, namespace=namespace)
+            await _run_internal_migrations(connection=connection, namespace=namespace)
 
         yield connection
 
