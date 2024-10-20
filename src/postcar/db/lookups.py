@@ -1,23 +1,60 @@
 import typing as t
-from postcar._types import Module
+from postcar._types import Module, Version
 from postcar.db import queries
 from postcar.utils import fs
 
 
 if t.TYPE_CHECKING:
     from postcar._types import Connection
+    from postcar.db.queries import TableName
 
 
-async def namespace_exists(connection: "Connection", namespace: str) -> bool:
+async def _exists(
+    connection: "Connection",
+    query: str,
+    params: t.Mapping[str, str],
+) -> bool:
     from psycopg.rows import scalar_row
-
-    query = queries.NAMESPACE_EXISTS
-
-    params = dict(namespace=namespace)
 
     async with connection.cursor(row_factory=scalar_row) as cursor:
         await cursor.execute(query=query, params=params, prepare=True)
         return bool(await cursor.fetchone())
+
+
+async def namespace_exists(connection: "Connection", namespace: str) -> bool:
+    return await _exists(
+        connection=connection,
+        query=queries.NAMESPACE_EXISTS,
+        params=dict(namespace=namespace),
+    )
+
+
+async def table_exists(
+    connection: "Connection",
+    namespace: str,
+    table: "TableName",
+) -> bool:
+    return await _exists(
+        connection=connection,
+        query=queries.TABLE_EXISTS,
+        params=dict(namespace=namespace, table=table),
+    )
+
+
+async def find_version(connection: "Connection", namespace: str) -> t.Optional[Version]:
+    from psycopg.rows import class_row
+
+    _query = """--sql
+      select "major", "minor" from {namespace}."_version"
+      order by "major" desc, "minor" desc
+      limit 1;
+    """
+
+    query = queries.preformat(query=_query, namespace=namespace)
+
+    async with connection.cursor(row_factory=class_row(Version)) as cursor:
+        await cursor.execute(query=query, prepare=True)
+        return await cursor.fetchone()
 
 
 async def find_missing_migrations(

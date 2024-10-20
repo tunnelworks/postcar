@@ -4,6 +4,11 @@ import typing as t
 if t.TYPE_CHECKING:
     from psycopg.sql import Composed
 
+    TableName = t.Literal[
+        "_version",
+        "_migration",
+    ]
+
 
 class RevertibleQuery(t.NamedTuple):
     forward: str
@@ -16,26 +21,28 @@ def preformat(query: str, namespace: str) -> "Composed":
     return sql.SQL(query).format(namespace=sql.Identifier(namespace))
 
 
-# MARK: bookkeeping
+# MARK: internal
 
-BOOKKEEPING_INIT: t.Final[str] = """--sql
+CREATE_NAMESPACE: t.Final[str] = """--sql
   create schema {namespace};
-
-  create table {namespace}."_migration" (
-    "pk" integer generated always as identity primary key,
-    "package" text not null,
-    "name" text not null,
-    "created_at" timestamptz not null default CURRENT_TIMESTAMP,
-    "reverted_at" timestamptz
-  );
-
-  create unique index "_distinct_migration_name"
-    on {namespace}."_migration" ("package", "name")
-      where "reverted_at" is null;
 """
 
-# TODO: add package to queries
-BOOKKEEPING_UPDATE: t.Final[RevertibleQuery] = RevertibleQuery(
+CREATE_VERSIONING: t.Final[str] = """--sql
+  create table {namespace}."_version" (
+    "major" integer not null,
+    "minor" integer not null,
+    "created_at" timestamptz not null default current_timestamp
+  );
+
+  create unique index "_distinct_schema_version"
+    on {namespace}."_version" ("major", "minor");
+"""
+
+
+# MARK: bookkeeping
+
+
+UPDATE_BOOKKEEPING: t.Final[RevertibleQuery] = RevertibleQuery(
     forward="""--sql
       insert into {namespace}."_migration" ("package", "name")
         values (%(package)s, %(name)s);
@@ -49,11 +56,22 @@ BOOKKEEPING_UPDATE: t.Final[RevertibleQuery] = RevertibleQuery(
     """,
 )
 
+UPDATE_VERSION: t.Final[str] = """--sql
+  insert into {namespace}."_version" ("major", "minor")
+    values (%(major)s, %(minor)s);
+"""
+
 
 # MARK: lookup queries
 
 NAMESPACE_EXISTS: t.Final[str] = """--sql
   select count(*) from "pg_namespace" where "nspname" = %(namespace)s;
+"""
+
+TABLE_EXISTS: t.Final[str] = """--sql
+  select count(*) from "pg_tables"
+    where "schemaname" = %(namespace)s
+      and "tablename" = %(table)s;
 """
 
 MISSING_MIGRATIONS: t.Final[str] = """--sql
