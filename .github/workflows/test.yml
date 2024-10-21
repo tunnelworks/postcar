@@ -16,7 +16,7 @@ env:
 
 jobs:
   run:
-    name: Run tests (Python ${{ matrix.python-version }}, Postgres ${{ matrix.postgres-version }}
+    name: Run tests [Python ${{ matrix.python-version }}, Postgres ${{ matrix.postgres-version }}]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
