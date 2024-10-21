@@ -52,5 +52,5 @@ jobs:
       - name: Run tests
         run: hatch test --python ${{ matrix.python-version }} --cover --randomize --parallel --retries 2 --retry-delay 1
         env:
-          POSTGRES_HOST: "postgres"
+          POSTGRES_HOSTADDR: "postgres"
           POSTGRES_DB: "postgres"
