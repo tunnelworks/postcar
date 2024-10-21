@@ -1,3 +1,4 @@
+import os
 import typing as t
 import pytest
 from postcar import config
@@ -13,13 +14,32 @@ def namespace() -> str:
 
 
 @pytest.fixture(scope="session")
-def conninfo() -> str:
-    # TODO: fix, read from env or something
+def host() -> str:
+    return os.getenv("POSTGRES_HOST", "127.0.0.1")
+
+
+@pytest.fixture(scope="session")
+def dbname() -> str:
+    return os.getenv("POSTGRES_DB", "test")
+
+
+@pytest.fixture(scope="session")
+def username() -> str:
+    return os.getenv("POSTGRES_USER", "postgres")
+
+
+@pytest.fixture(scope="session")
+def password() -> str:
+    return os.getenv("POSTGRES_PASSWORD", "1234")
+
+
+@pytest.fixture(scope="session")
+def conninfo(host: str, dbname: str, username: str, password: str) -> str:
     return config.ConnectionInfo(
-        host="127.0.0.1",
-        dbname="test",
-        username="postgres",
-        password="1234",
+        host=host,
+        dbname=dbname,
+        username=username,
+        password=password,
     ).conninfo
 
 
