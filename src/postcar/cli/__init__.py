@@ -1,4 +1,6 @@
+import asyncio
 import typing as t
+from postcar.__about__ import __version__
 from postcar.cli import migrate
 from postcar.cli._parser import parser, subparsers
 
@@ -15,7 +17,25 @@ handlers: t.Final[t.Mapping[str, "Handler"]] = dict(
 )
 
 
+def main() -> t.Optional[int]:
+    args = parser.parse_args()
+
+    if args.version:
+        return print(__version__)
+
+    if args.command is None:
+        parser.print_help()
+        return 1
+
+    if (handler := handlers.get(args.command)) is None:
+        print(f"handler for '{args.command}' not found")
+        return 2
+
+    return asyncio.run(handler(args=args))
+
+
 __all__ = (
+    "main",
     "parser",
     "handlers",
 )
