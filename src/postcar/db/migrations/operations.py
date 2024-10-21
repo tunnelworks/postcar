@@ -1,5 +1,6 @@
 import typing as t
 from postcar.db import lookups, queries
+from postcar.config import defaults
 
 
 if t.TYPE_CHECKING:
@@ -114,7 +115,7 @@ async def migrate(
 async def run(
     connection: "Connection",
     package: str,
-    namespace: str,
+    namespace: str = defaults.DEFAULT_NAMESPACE,
     dry_run: bool = False,
 ) -> None:
     if dry_run:
