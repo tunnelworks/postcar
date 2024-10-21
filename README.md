@@ -67,7 +67,7 @@ class Migration(postcar.Migration):
 
 The package comes with a minimal CLI.
 
-See `python -m postcar --help` for available commands.
+See `postcar --help` for available commands.
 
 ### Configuration
 
