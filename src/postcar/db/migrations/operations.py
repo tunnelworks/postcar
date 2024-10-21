@@ -1,6 +1,6 @@
 import typing as t
-from postcar.db import lookups, queries
 from postcar.config import defaults
+from postcar.db import lookups, queries
 
 
 if t.TYPE_CHECKING:
