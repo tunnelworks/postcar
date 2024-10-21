@@ -116,3 +116,10 @@ known-third-party = ["psycopg"]
 
 [tool.ruff.format]
 quote-style = "double"
+
+
+[tool.hatch.build.targets.sdist]
+exclude = [".github", "tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/postcar"]
