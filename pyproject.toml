@@ -26,6 +26,10 @@ classifiers = [
 dependencies = ["psycopg>=3"]
 
 
+[project.scripts]
+postcar = "postcar.cli:main"
+
+
 [project.urls]
 Documentation = "https://github.com/tunnelworks/postcar#readme"
 Issues = "https://github.com/tunnelworks/postcar/issues"
