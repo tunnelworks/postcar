@@ -29,6 +29,8 @@ jobs:
         image: postgres:${{ matrix.postgres-version }}
         env:
           POSTGRES_PASSWORD: "1234"
+        ports:
+          - "5432:5432"
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -52,5 +54,4 @@ jobs:
       - name: Run tests
         run: hatch test --python ${{ matrix.python-version }} --cover --randomize --parallel --retries 2 --retry-delay 1
         env:
-          POSTGRES_HOSTADDR: "postgres"
           POSTGRES_DB: "postgres"

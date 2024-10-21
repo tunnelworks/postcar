@@ -14,8 +14,8 @@ def namespace() -> str:
 
 
 @pytest.fixture(scope="session")
-def hostaddr() -> str:
-    return os.getenv("POSTGRES_HOSTADDR", "127.0.0.1")
+def host() -> str:
+    return os.getenv("POSTGRES_HOST", "127.0.0.1")
 
 
 @pytest.fixture(scope="session")
@@ -35,13 +35,13 @@ def password() -> str:
 
 @pytest.fixture(scope="session")
 def conninfo(
-    hostaddr: str,
+    host: str,
     dbname: str,
     username: str,
     password: str,
 ) -> str:
     return config.ConnectionInfo(
-        hostaddr=hostaddr,
+        host=host,
         dbname=dbname,
         username=username,
         password=password,
