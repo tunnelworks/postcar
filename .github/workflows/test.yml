@@ -16,12 +16,11 @@ env:
 
 jobs:
   run:
-    name: Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
-    runs-on: ${{ matrix.os }}
+    name: Run tests (Python ${{ matrix.python-version }}, Postgres ${{ matrix.postgres-version }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
         postgres-version: ["16", "17"]
 
@@ -34,7 +33,7 @@ jobs:
           --health-cmd pg_is_ready
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 3
+          --health-retries 5
 
     steps:
       - uses: actions/checkout@v3
