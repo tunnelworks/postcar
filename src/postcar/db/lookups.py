@@ -1,5 +1,6 @@
 import typing as t
 from postcar._types import Module, Version
+from postcar.config import defaults
 from postcar.db import queries
 from postcar.utils import fs
 
@@ -41,7 +42,10 @@ async def table_exists(
     )
 
 
-async def find_version(connection: "Connection", namespace: str) -> t.Optional[Version]:
+async def find_version(
+    connection: "Connection",
+    namespace: str = defaults.DEFAULT_NAMESPACE,
+) -> t.Optional[Version]:
     from psycopg.rows import class_row
 
     _query = """--sql
@@ -60,7 +64,7 @@ async def find_version(connection: "Connection", namespace: str) -> t.Optional[V
 async def find_missing_migrations(
     connection: "Connection",
     package: str,
-    namespace: str,
+    namespace: str = defaults.DEFAULT_NAMESPACE,
 ) -> t.Sequence[Module]:
     from psycopg.rows import class_row
 
