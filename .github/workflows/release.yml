@@ -1,0 +1,36 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    name: Build and publish
+    runs-on: ubuntu-latest
+    environment:
+      name: release
+      url: https://pypi.org/project/postcar
+    permissions:
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Hatch
+        run: pip install --upgrade hatch
+
+      - name: Build dist
+        run: hatch build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
