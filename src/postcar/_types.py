@@ -19,6 +19,19 @@ class Module(t.NamedTuple):
         return f"{self.package}:{self.name}"
 
 
+class MigrationName(t.NamedTuple):
+    sequence: int
+    description: str
+
+    def __str__(self) -> str:
+        return f"{self.number}_{self.description}"
+
+    @classmethod
+    def fromstring(cls, name: str) -> "Self":
+        sequence, description = name.split("_", maxsplit=1)
+        return cls(sequence=int(sequence), description=description)
+
+
 class Version(t.NamedTuple):
     major: int
     minor: int

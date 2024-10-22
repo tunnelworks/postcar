@@ -1,7 +1,7 @@
 import asyncio
 import typing as t
 from postcar.__about__ import __version__
-from postcar.cli import migrate
+from postcar.cli import make, migrate
 from postcar.cli._parser import parser, subparsers
 
 
@@ -9,10 +9,12 @@ if t.TYPE_CHECKING:
     from postcar.cli._types import Handler
 
 
+make.add_parser(subparsers=subparsers)
 migrate.add_parser(subparsers=subparsers)
 
 
 handlers: t.Final[t.Mapping[str, "Handler"]] = dict(
+    make=make.handler,
     migrate=migrate.handler,
 )
 
