@@ -7,7 +7,7 @@ from postcar.errors import MigrationError
 from postcar.utils.names import MIGRATION_PATTERN
 
 
-def find_migrations(package: str) -> t.Sequence[Module]:
+def get_path(package: str) -> pathlib.Path:
     _module = importlib.import_module(name=package)
 
     # NOTE: since we already successfully imported the module,
@@ -15,7 +15,11 @@ def find_migrations(package: str) -> t.Sequence[Module]:
     if (path := _module.__file__) is None:
         raise FileNotFoundError(f"package {package} not found")
 
-    root = pathlib.Path(path).parent
+    return pathlib.Path(path).parent
+
+
+def _find_migrations(package: str) -> t.Iterable[Module]:
+    root = get_path(package=package)
 
     def is_file(path: pathlib.Path) -> t.TypeGuard[pathlib.Path]:
         return path.is_file()
@@ -31,7 +35,18 @@ def find_migrations(package: str) -> t.Sequence[Module]:
     def to_module(name: str) -> Module:
         return Module(name=name, package=package)
 
-    return sorted(map(to_module, names))
+    return map(to_module, names)
+
+
+def find_migrations(package: str) -> t.Sequence[Module]:
+    return sorted(_find_migrations(package=package))
+
+
+def find_latest_migration(package: str) -> t.Optional[Module]:
+    try:
+        return max(_find_migrations(package=package))
+    except ValueError:
+        return None
 
 
 def load_migration(module: Module) -> t.Type[Migration]:
