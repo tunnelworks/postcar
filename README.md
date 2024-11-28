@@ -48,20 +48,27 @@ which must inherit from `postcar.Migration`.
 A minimal migration file might look as follows:
 
 ```python
+import typing as t
 import postcar
 
 
 class Migration(postcar.Migration):
+    @t.override
     def get_forward(self) -> str:
         return """
             create extension pg_trgm;
         """
 
+    @t.override
     def get_rollback(self) -> str:
         return """
             drop extension pg_trgm;
         """
 ```
+
+> [!NOTE]
+> It's highly recommended to use the `override` decorator,
+> to catch any potential issues during type checking.
 
 ### CLI
 
