@@ -3,6 +3,7 @@ from postcar.errors import MigrationError
 
 
 if t.TYPE_CHECKING:
+    from psycopg.abc import Query
     from postcar._types import Connection, Module
 
 
@@ -34,8 +35,8 @@ class Migration:
     async def rollback(self) -> None:
         raise NotImplementedError()
 
-    def get_forward(self) -> t.Optional[str]:
+    def get_forward(self) -> t.Optional["Query"]:
         return None
 
-    def get_rollback(self) -> t.Optional[str]:
+    def get_rollback(self) -> t.Optional["Query"]:
         return None
