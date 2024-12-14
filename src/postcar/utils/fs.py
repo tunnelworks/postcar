@@ -1,5 +1,5 @@
+import contextlib
 import importlib
-import os
 import pathlib
 import sys
 import typing as t
@@ -9,15 +9,38 @@ from postcar.errors import MigrationError
 from postcar.utils.names import MIGRATION_PATTERN
 
 
-def _check_sys_path() -> None:
-    # NOTE: if the package is not installed in the site packages,
-    # we need to make sure `sys.path` includes the current working directory.
-    if (cwd := os.getcwd()) not in sys.path:
-        sys.path.insert(0, cwd)
+if t.TYPE_CHECKING:
+    P = t.ParamSpec("P")
+    R = t.TypeVar("R")
+
+    F = t.Callable[P, t.Coroutine[object, object, R]]
+
+
+@contextlib.contextmanager
+def _sys_path(path: str) -> t.Generator[None, None, None]:
+    if path in sys.path:
+        yield
+        return
+
+    sys.path.insert(0, path)
+
+    yield
+
+    try:
+        sys.path.remove(path)
+    except ValueError:
+        pass
+
+
+def add_path(f: "F[P, R]", *, path: str) -> "F[P, R]":
+    async def inner(*args: "P.args", **kwargs: "P.kwargs") -> "R":
+        with _sys_path(path=path):
+            return await f(*args, **kwargs)
+
+    return inner
 
 
 def find_migrations(package: str) -> t.Sequence[Module]:
-    _check_sys_path()
     _module = importlib.import_module(name=package)
 
     # NOTE: since we already successfully imported the module,
@@ -45,7 +68,6 @@ def find_migrations(package: str) -> t.Sequence[Module]:
 
 
 def load_migration(module: Module) -> t.Type[Migration]:
-    _check_sys_path()
     _module = importlib.import_module(name=f".{module.name}", package=module.package)
 
     try:
