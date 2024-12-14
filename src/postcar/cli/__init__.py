@@ -1,8 +1,10 @@
 import asyncio
+import os
 import typing as t
 from postcar.__about__ import __version__
 from postcar.cli import migrate
 from postcar.cli._parser import parser, subparsers
+from postcar.utils import fs
 
 
 if t.TYPE_CHECKING:
@@ -31,7 +33,10 @@ def main() -> t.Optional[int]:
         print(f"handler for '{args.command}' not found")
         return 2
 
-    return asyncio.run(handler(args=args))
+    # TODO: maybe make the sys.path hacks optional
+    _handler = fs.add_path(handler, path=os.getcwd())
+
+    return asyncio.run(_handler(args=args))
 
 
 __all__ = (
