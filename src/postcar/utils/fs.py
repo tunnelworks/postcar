@@ -26,10 +26,8 @@ def _sys_path(path: str) -> t.Generator[None, None, None]:
 
     yield
 
-    try:
+    with contextlib.suppress(ValueError):
         sys.path.remove(path)
-    except ValueError:
-        pass
 
 
 def add_path(f: "F[P, R]", *, path: str) -> "F[P, R]":
